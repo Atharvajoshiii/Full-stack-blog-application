@@ -10,6 +10,7 @@ const multer = require('multer');
 const uploadMiddleware = multer({ dest: 'uploads/' });
 const fs = require('fs');
 const Post = require('./models/Post.js');
+require('dotenv').config();
 
 const salt = bcrypt.genSaltSync(10);
 const secret = 'my_jsonwebtoken_secured_key'; // Replace with a secure secret key
@@ -164,6 +165,133 @@ app.put('/post/:id', uploadMiddleware.single('file'), async (req, res) => {
     res.status(500).json({ message: 'Error updating post', error: error.message });
   }
 });
+
+app.post('/post/:id/like', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { token } = req.cookies;
+
+    
+    jwt.verify(token, secret, {}, async (err, userInfo) => {
+      if (err) return res.status(401).json({ message: 'Unauthorized' });
+
+      
+      const post = await Post.findById(id);
+      if (!post) return res.status(404).json({ message: 'Post not found' });
+
+      
+      const alreadyLiked = Array.isArray(post.likedBy) && post.likedBy.includes(userInfo.id);
+
+      if (alreadyLiked) return res.status(400).json({ message: 'You have already liked this post' });
+
+    
+      post.likes += 1;
+      post.likedBy.push(userInfo.id);
+
+      
+      await post.save();
+      
+      res.status(200).json({ message: 'Post liked successfully', likes: post.likes });
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error liking the post', error: error.message });
+  }
+});
+
+
+app.post('/post/:id/comment', async (req, res) => {
+  const { id } = req.params; // Post ID
+  const { text } = req.body; // Comment text
+  const { token } = req.cookies; // JWT token to verify user
+
+  try {
+    // Verify JWT token
+    jwt.verify(token, secret, {}, async (err, userInfo) => {
+      if (err) return res.status(401).json({ message: 'Unauthorized' });
+
+      // Find the post by ID
+      const post = await Post.findById(id);
+
+      // Create a new comment
+      const newComment = {
+        user: userInfo.id, 
+        text
+      };
+
+      // Add the comment to the post's comments array
+      post.comments.push(newComment);
+
+      // Save the updated post
+      await post.save();
+
+      // Return the updated post with the new comment
+      res.status(200).json(post);
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error adding comment', error: error.message });
+  }
+});
+
+app.get('/post/:id/comments', async (req, res) => {
+  const { id } = req.params; // Post ID
+
+  try {
+    // Find the post by ID and populate the user details for each comment
+    const post = await Post.findById(id).populate('comments.user', 'username');
+
+    // Return the comments
+    res.status(200).json(post.comments);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching comments', error: error.message });
+  }
+});
+
+app.delete('/post/:id/comment/:commentId', async (req, res) => {
+  const { id, commentId } = req.params; // Post ID and Comment ID
+  const { token } = req.cookies; // JWT token to verify user
+
+  try {
+    // Verify JWT token
+    jwt.verify(token, secret, {}, async (err, userInfo) => {
+      if (err) return res.status(401).json({ message: 'Unauthorized' });
+
+      // Find the post by ID
+      const post = await Post.findById(id);
+
+      if (!post) {
+        return res.status(404).json({ message: 'Post not found' });
+      }
+
+      // Find the comment by ID
+      const comment = post.comments.id(commentId);
+
+      if (!comment) {
+        return res.status(404).json({ message: 'Comment not found' });
+      }
+
+      // Check if the user is the owner of the comment
+      if (comment.user.toString() !== userInfo.id) {
+        return res.status(403).json({ message: 'You are not authorized to delete this comment' });
+      }
+
+      // Use filter to remove the comment from the array
+      post.comments = post.comments.filter(c => c._id.toString() !== commentId);
+
+      // Save the updated post
+      await post.save();
+
+      // Return the updated post without the deleted comment
+      res.status(200).json(post);
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting comment', error: error.message });
+  }
+});
+
+
+
+
+
 
 
 app.listen(4000, () => {
