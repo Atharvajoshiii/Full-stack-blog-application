@@ -17,7 +17,7 @@ const secret = 'my_jsonwebtoken_secured_key'; // Replace with a secure secret ke
 
 app.use(cors({
   credentials: true,
-  origin: "https://full-stack-blog-application.vercel.app"
+  origin: "http://localhost:5173"
 }));
 
 app.use(cookieParser());
@@ -34,6 +34,10 @@ mongoose.connect(connectionurl)
   .catch((err) => {
     console.log(err);
   });
+
+app.get('/',(req,res)=>{
+  res.send('hello everyone this is my server')
+})
 
 app.post('/signup', async (req, res) => {
   const { username, password } = req.body;
