@@ -27,7 +27,7 @@ export default function LoginPage() {
         console.log('Login successful:', data);
 
         setUserInfo(data);
-        navigate('/');
+        navigate('/homepage');
       } else {
         console.error('Login failed');
       }

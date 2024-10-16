@@ -20,19 +20,19 @@ function App() {
     <UserContextProvider>
   
     <Routes>
-      <Route index element={<HomePage/>}/>
+      <Route path='/homepage' element={<HomePage/>}/>
       <Route path="/signup" element={<SignUpPage/>}/>
       
       <Route path="/newsignup" element={<NewSignUpPage/>}/>
       <Route path="/login" element={<LoginPage/>}/>
-      <Route path = "/index" element={
+      <Route path = "/" element={
 
         <div>
       <IndexPage/>
       <Example/>
       <Footer/>
       </div>
-      
+     
       }/>
       <Route path = "/create" element={
 
