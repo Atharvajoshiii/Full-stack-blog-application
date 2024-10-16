@@ -70,7 +70,7 @@ app.post('/login', async (req, res) => {
   const token = jwt.sign({ id: userDoc._id, username: userDoc.username }, secret, { expiresIn: '1h' });
 
   // Set the JWT token as a cookie and send the response
-  res.cookie('token', token, { httpOnly: true, maxAge: 3600000}) // 1 hour expiration
+  res.cookie('token', token, { httpOnly: true, maxAge:  24 * 60 * 60 * 1000 , secure:true, sameSite:'None'} ) // 1 hour expiration
     .status(200).json({
       message: 'Login successful',
       id: userDoc._id,
